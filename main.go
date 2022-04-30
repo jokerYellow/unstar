@@ -6,35 +6,49 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 )
 
 type Session struct {
 	token string
 }
 
-var session = Session{}
+var session Session
 
 type Project struct {
 	FullName string `json:"full_name"`
 }
 
 func main() {
-	fmt.Println("hello,world!")
+	if len(os.Args) < 2 {
+		fmt.Println("input token")
+		return
+	}
+	unstar(os.Args[1])
+}
+
+func unstar(token string) {
+	session = Session{token: token}
+	repos, err := session.getAllRepos()
+	if err != nil {
+		fmt.Println(err)
+	}
+	session.unStar(repos)
 }
 
 func (s Session) unStar(projects []Project) {
-	for _, p := range projects {
+	for index, p := range projects {
 		req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("https://api.github.com/user/starred/%s", p.FullName), nil)
 		req.Header.Add("Authorization", fmt.Sprintf("token %s", s.token))
 		if err != nil {
-			log.Println(err)
+			log.Printf("[%d]unstar %s %v", index, p.FullName, err)
 		}
 		res, err := http.DefaultClient.Do(req)
 		if err != nil {
-			log.Println(err)
+			log.Printf("[%d]unstar %s %v", index, p.FullName, err)
 		}
 		if res.StatusCode < 300 {
-			log.Printf("unstar %s success", p.FullName)
+			log.Printf("[%d]unstar %-30s success", index, p.FullName)
 		}
 	}
 }
@@ -80,19 +94,3 @@ func (s Session) getRepos(page int, pageSize int) ([]Project, error) {
 	err = json.Unmarshal(bs, &projects)
 	return projects, err
 }
-
-/*
-
-curl \
-  -H "Authorization: token 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"\
-  -H "Accept: application/vnd.github.v3+json" \
-  https://api.github.com/user/starred
-
-
-curl \
-  -X DELETE \
-  -H "Authorization: token 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"\
-  -H "Accept: application/vnd.github.v3+json" \
-  https://api.github.com/user/starred/airbnb/HorizonCalendar
-
-*/

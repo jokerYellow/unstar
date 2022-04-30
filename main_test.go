@@ -14,8 +14,9 @@ func token() string {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return fmt.Sprintf("%s", token)
+	return string(token)
 }
+
 func Test_getRepos(t *testing.T) {
 	got, err := sessionTest.getRepos(1, 10)
 	if err != nil {
@@ -34,4 +35,8 @@ func Test_getAllRepos(t *testing.T) {
 		fmt.Printf("%d %s\n", i, v.FullName)
 	}
 	sessionTest.unStar(got)
+}
+
+func Test_Unstar(t *testing.T) {
+	unstar(token())
 }
